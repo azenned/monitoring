@@ -44,6 +44,12 @@ class UpdateStatusCommand extends ProjectCommand
               null,
               InputOption::VALUE_OPTIONAL,
               'Report type: console|mail'
+          )
+          ->addOption(
+              'report-level',
+              null,
+              InputOption::VALUE_OPTIONAL,
+              'Report Level: security|all'
           );
 
     }
@@ -94,7 +100,28 @@ class UpdateStatusCommand extends ProjectCommand
 
         //Report update Status
         $reportType = $input->getOption('report');
-        if ($reportType == 'mail') {
+        $reportLevel = $input->getOption('report-level');
+        $hasIssues = TRUE;
+        if($reportLevel == 'security'){
+            $hasIssues = FALSE;
+            if ($updateStatus['drupal']['current_rank'] > 1
+                && $updateStatus['drupal']['last_security_rank'] != 0
+                && $updateStatus['drupal']['last_security_rank'] < $updateStatus['drupal']['current_rank']) {
+                $hasIssues = TRUE;
+            }
+            foreach($project->getModules() as $module) {
+                if (isset($updateStatus['modules'][$module->machineName])) {
+                    $updateStatusEntry = $updateStatus['modules'][$module->machineName];
+                    if ($updateStatusEntry['current_rank'] > 1
+                        && $updateStatusEntry['last_security_rank'] != 0
+                        && $updateStatusEntry['last_security_rank'] < $updateStatusEntry['current_rank']) {
+                        $hasIssues = TRUE;
+                    }
+                }
+            }
+        }
+
+        if (($reportType == 'mail' )&& $hasIssues) {
             $formatter = new HtmlReportFormatter();
             $html = $formatter->render($project, $updateStatus);
 
@@ -104,7 +131,7 @@ class UpdateStatusCommand extends ProjectCommand
             $to = $this->projectConfig->getParam('mail');
             $email->send($to, '[' . $project->name . '] Drupal update status report', $html);
         }
-        else {
+        elseif($hasIssues) {
             $report = new ConsoleReportFormatter();
             $report->render($output, $project, $updateStatus);
         }
