@@ -20,10 +20,17 @@ class HtmlReportFormatter
     /**
      * @var string styles use to colorize line according to the extension status
      */
-    CONST UNSUPPORTED_STYLE = '<td style="border : 1px solid black" bgcolor="#EDEDED">%s</td>';
-    CONST INFO_STYLE        = '<td style="border : 1px solid black" bgcolor="#DDFFDD">%s</td>';
-    CONST BUG_STYLE         = '<td style="border : 1px solid black" bgcolor="#FFFFDD">%s</td>';
-    CONST SECURITY_STYLE    = '<td style="border : 1px solid black" bgcolor="#FFCCCC">%s</td>';
+    CONST UNSUPPORTED_STYLE = '#EDEDED';
+    CONST INFO_STYLE        = '#DDFFDD';
+    CONST BUG_STYLE         = '#FFFFDD';
+    CONST SECURITY_STYLE    = '#FFCCCC';
+    CONST INFO_LINK_STYLE   = 'font-weight: normal;font-style: normal;color: #4d4d4d;font-size: 12px;';
+    CONST UNSUPPORTED_LINK_STYLE   = 'font-weight: normal;font-style: normal;font-size: 12px;';
+    CONST BUG_LINK_STYLE    = 'font-weight: normal;font-style: normal;color: #58ACFA;';
+    CONST SECURITY_LINK_STYLE = 'font-weight: normal;font-style: normal;font-size: 14px;color:#FA8258';
+    CONST UNSUPPORTED_FORMAT = '<td style="border : 1px solid black" bgcolor="#%color"><a style="%link_style">%label</a></td>';
+    CONST MODULE_FORMAT     = '<td style="border : 1px solid black" bgcolor="#%color"><a href="https://www.drupal.org/project/%project" style="%link_style">%label</a></td>';
+    CONST VERSION_FORMAT    = '<td style="border : 1px solid black" bgcolor="#%color"><a href="https://www.drupal.org/project/%project/releases/%version" style="%link_style">%label</a></td>';
 
     /**
      * Render the report
@@ -91,31 +98,63 @@ class HtmlReportFormatter
 
         if ($module === NULL) {
             $moduleName = 'Drupal';
+            $machineName = 'drupal';
         }
         else {
             $moduleName = $module->name;
+            $machineName = $module->machineName;
         }
 
         $style = self::INFO_STYLE;
+        $format = self::MODULE_FORMAT;
+        $linkStyle = self::INFO_LINK_STYLE;
+
         if ($updateStatusEntry['current_rank'] == 0) {
             $style = self::UNSUPPORTED_STYLE;
+            $format = self::UNSUPPORTED_FORMAT;
+            $linkStyle = self::UNSUPPORTED_LINK_STYLE;
         }
         else if ($updateStatusEntry['current_rank'] > 1
             && $updateStatusEntry['last_security_rank'] != 0
             && $updateStatusEntry['last_security_rank'] < $updateStatusEntry['current_rank']) {
             $style = self::SECURITY_STYLE;
+            $format = self::VERSION_FORMAT;
+            $linkStyle = self::SECURITY_LINK_STYLE;
         }
         else if ($updateStatusEntry['current_rank'] > 1
             && $updateStatusEntry['last_bug_rank'] != 0
             && $updateStatusEntry['last_bug_rank'] < $updateStatusEntry['current_rank']) {
             $style = self::BUG_STYLE;
+            $format = self::VERSION_FORMAT;
+            $linkStyle = self::BUG_LINK_STYLE;
         }
 
         return '<tr>' .
-            sprintf($style, $moduleName) .
-            sprintf($style, $installedVersion) .
-            sprintf($style, $lastSecurityUpdateVersion) .
-            sprintf($style, $lastBugFixVersion) .
-        '<tr>';
+            $this->format_string(self::MODULE_FORMAT, array('%color'=>$style,'%link_style'=>$linkStyle,'%project'=>$machineName,'%label'=>$moduleName ,'%label'=>$moduleName )) .
+            $this->format_string($format, array('%color'=>$style,'%link_style'=>$linkStyle,'%project'=>$machineName,'%label'=>$installedVersion,'%version'=>$installedVersion)) .
+            $this->format_string($format, array('%color'=>$style,'%link_style'=>$linkStyle,'%project'=>$machineName,'%label'=>$lastSecurityUpdateVersion,'%version'=>$lastSecurityUpdateVersion)) .
+            $this->format_string($format, array('%color'=>$style,'%link_style'=>$linkStyle,'%project'=>$machineName,'%label'=>$lastBugFixVersion,'%version'=>$lastBugFixVersion)) .
+        '</tr>';
     }
+
+    /**
+     * @param $string
+     * @param array $args
+     * @return string
+     */
+    private function format_string($string, array $args = array()) {
+        // Transform arguments before inserting them.
+        foreach ($args as $key => $value) {
+            switch ($key[0]) {
+                case '%':
+                    // Escaped only.
+                    $args[$key] =  htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+                    break;
+                case '!':
+                    // Pass-through.
+            }
+        }
+        return strtr($string, $args);
+    }
+
 } 
