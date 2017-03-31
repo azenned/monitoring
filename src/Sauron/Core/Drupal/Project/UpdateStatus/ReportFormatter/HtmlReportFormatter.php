@@ -24,10 +24,7 @@ class HtmlReportFormatter
     CONST INFO_STYLE        = '#DDFFDD';
     CONST BUG_STYLE         = '#FFFFDD';
     CONST SECURITY_STYLE    = '#FFCCCC';
-    CONST INFO_LINK_STYLE   = 'font-weight: normal;font-style: normal;color: #4d4d4d;font-size: 12px;';
-    CONST UNSUPPORTED_LINK_STYLE   = 'font-weight: normal;font-style: normal;font-size: 12px;';
-    CONST BUG_LINK_STYLE    = 'font-weight: normal;font-style: normal;color: #58ACFA;';
-    CONST SECURITY_LINK_STYLE = 'font-weight: normal;font-style: normal;font-size: 14px;color:#FA8258';
+    CONST LINK_STYLE   = 'font-weight: normal;font-style: normal;font-size: 15px;color:black;margin:2px';
     CONST UNSUPPORTED_FORMAT = '<td style="border : 1px solid black" bgcolor="#%color"><a style="%link_style">%label</a></td>';
     CONST MODULE_FORMAT     = '<td style="border : 1px solid black" bgcolor="#%color"><a href="https://www.drupal.org/project/%project" style="%link_style">%label</a></td>';
     CONST VERSION_FORMAT    = '<td style="border : 1px solid black" bgcolor="#%color"><a href="https://www.drupal.org/project/%project/releases/%version" style="%link_style">%label</a></td>';
@@ -107,26 +104,23 @@ class HtmlReportFormatter
 
         $style = self::INFO_STYLE;
         $format = self::MODULE_FORMAT;
-        $linkStyle = self::INFO_LINK_STYLE;
+        $linkStyle = self::LINK_STYLE;
 
         if ($updateStatusEntry['current_rank'] == 0) {
             $style = self::UNSUPPORTED_STYLE;
             $format = self::UNSUPPORTED_FORMAT;
-            $linkStyle = self::UNSUPPORTED_LINK_STYLE;
         }
         else if ($updateStatusEntry['current_rank'] > 1
             && $updateStatusEntry['last_security_rank'] != 0
             && $updateStatusEntry['last_security_rank'] < $updateStatusEntry['current_rank']) {
             $style = self::SECURITY_STYLE;
             $format = self::VERSION_FORMAT;
-            $linkStyle = self::SECURITY_LINK_STYLE;
         }
         else if ($updateStatusEntry['current_rank'] > 1
             && $updateStatusEntry['last_bug_rank'] != 0
             && $updateStatusEntry['last_bug_rank'] < $updateStatusEntry['current_rank']) {
             $style = self::BUG_STYLE;
             $format = self::VERSION_FORMAT;
-            $linkStyle = self::BUG_LINK_STYLE;
         }
 
         return '<tr>' .
